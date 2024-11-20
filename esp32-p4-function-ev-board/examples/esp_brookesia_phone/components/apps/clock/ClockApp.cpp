@@ -6,10 +6,10 @@
 
 static const char *TAG = "ClockApp";
 
-LV_IMG_DECLARE(img_app_clock);
+LV_IMG_DECLARE(apple_clock);
 LV_FONT_DECLARE(digital_clock_font);
 
-ClockApp::ClockApp() : ESP_Brookesia_PhoneApp("Clock", &img_app_clock, true)
+ClockApp::ClockApp() : ESP_Brookesia_PhoneApp("Clock", &apple_clock, true)
 {
 }
 
@@ -88,9 +88,18 @@ void ClockApp::updateTime()
     struct tm timeinfo;
     localtime_r(&now, &timeinfo);
 
-    char buffer[9];
-    strftime(buffer, sizeof(buffer), "%H:%M", &timeinfo);
-    ESP_LOGI(TAG, "Time: %s", buffer);
-    // Update the label text
-    lv_label_set_text(time_label_, buffer);
+    struct tm check_time = {};
+    check_time.tm_year = 2021 - 1900; // Year since 1900
+    check_time.tm_mon = 0;            // January
+    check_time.tm_mday = 1;           // 1st
+    time_t check_timestamp = mktime(&check_time);
+
+    if (now > check_timestamp) // Check if time is set
+    {
+        char buffer[9];
+        strftime(buffer, sizeof(buffer), "%H:%M", &timeinfo);
+        ESP_LOGI(TAG, "Time: %s", buffer);
+        // Update the label text
+        lv_label_set_text(time_label_, buffer);
+    }
 }
