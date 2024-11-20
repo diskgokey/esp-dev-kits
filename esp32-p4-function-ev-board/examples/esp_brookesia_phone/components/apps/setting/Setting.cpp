@@ -23,50 +23,52 @@
 
 #include "esp_brookesia_versions.h"
 
-#define ENABLE_DEBUG_LOG                (0)
+#define ENABLE_DEBUG_LOG (0)
 
-#define HOME_REFRESH_TASK_STACK_SIZE    (1024 * 4)
-#define HOME_REFRESH_TASK_PRIORITY      (1)
-#define HOME_REFRESH_TASK_PERIOD_MS     (2000)
+#define HOME_REFRESH_TASK_STACK_SIZE (1024 * 4)
+#define HOME_REFRESH_TASK_PRIORITY (1)
+#define HOME_REFRESH_TASK_PERIOD_MS (2000)
 
-#define WIFI_SCAN_TASK_STACK_SIZE       (1024 * 6)
-#define WIFI_SCAN_TASK_PRIORITY         (1)
-#define WIFI_SCAN_TASK_PERIOD_MS        (5 * 1000)
+#define WIFI_SCAN_TASK_STACK_SIZE (1024 * 6)
+#define WIFI_SCAN_TASK_PRIORITY (1)
+#define WIFI_SCAN_TASK_PERIOD_MS (5 * 1000)
 
-#define WIFI_CONNECT_TASK_STACK_SIZE    (1024 * 4)
-#define WIFI_CONNECT_TASK_PRIORITY      (4)
-#define WIFI_CONNECT_TASK_STACK_CORE    (0)
-#define WIFI_CONNECT_UI_WAIT_TIME_MS    (1 * 1000)
-#define WIFI_CONNECT_UI_PANEL_SIZE      (1 * 1000)
-#define WIFI_CONNECT_RET_WAIT_TIME_MS   (10 * 1000)
+#define WIFI_CONNECT_TASK_STACK_SIZE (1024 * 4)
+#define WIFI_CONNECT_TASK_PRIORITY (4)
+#define WIFI_CONNECT_TASK_STACK_CORE (0)
+#define WIFI_CONNECT_UI_WAIT_TIME_MS (1 * 1000)
+#define WIFI_CONNECT_UI_PANEL_SIZE (1 * 1000)
+#define WIFI_CONNECT_RET_WAIT_TIME_MS (10 * 1000)
 
-#define SCREEN_BRIGHTNESS_MIN           (20)
-#define SCREEN_BRIGHTNESS_MAX           (BSP_LCD_BACKLIGHT_BRIGHTNESS_MAX)
+#define SCREEN_BRIGHTNESS_MIN (20)
+#define SCREEN_BRIGHTNESS_MAX (BSP_LCD_BACKLIGHT_BRIGHTNESS_MAX)
 
-#define SPEAKER_VOLUME_MIN              (0)
-#define SPEAKER_VOLUME_MAX              (100)
+#define SPEAKER_VOLUME_MIN (0)
+#define SPEAKER_VOLUME_MAX (100)
 
-#define NVS_STORAGE_NAMESPACE           "storage"
-#define NVS_KEY_WIFI_ENABLE             "wifi_en"
-#define NVS_KEY_BLE_ENABLE              "ble_en"
-#define NVS_KEY_AUDIO_VOLUME            "volume"
-#define NVS_KEY_DISPLAY_BRIGHTNESS      "brightness"
+#define NVS_STORAGE_NAMESPACE "storage"
+#define NVS_KEY_WIFI_ENABLE "wifi_en"
+#define NVS_KEY_BLE_ENABLE "ble_en"
+#define NVS_KEY_AUDIO_VOLUME "volume"
+#define NVS_KEY_DISPLAY_BRIGHTNESS "brightness"
+#define NVS_KEY_WIFI_SSID "ssid"
+#define NVS_KEY_WIFI_PWD "pwd"
 
-#define UI_MAIN_ITEM_LEFT_OFFSET        (20)
-#define UI_WIFI_LIST_UP_OFFSET          (20)
-#define UI_WIFI_LIST_UP_PAD             (20)
-#define UI_WIFI_LIST_DOWN_PAD           (20)
-#define UI_WIFI_LIST_H_PERCENT          (75)
-#define UI_WIFI_LIST_ITEM_H             (60)
-#define UI_WIFI_LIST_ITEM_FONT          (&lv_font_montserrat_26)
-#define UI_WIFI_KEYBOARD_H_PERCENT      (30)
-#define UI_WIFI_ICON_LOCK_RIGHT_OFFSET       (-10)
-#define UI_WIFI_ICON_SIGNAL_RIGHT_OFFSET     (-50)
-#define UI_WIFI_ICON_CONNECT_RIGHT_OFFSET    (-90)
+#define UI_MAIN_ITEM_LEFT_OFFSET (20)
+#define UI_WIFI_LIST_UP_OFFSET (20)
+#define UI_WIFI_LIST_UP_PAD (20)
+#define UI_WIFI_LIST_DOWN_PAD (20)
+#define UI_WIFI_LIST_H_PERCENT (75)
+#define UI_WIFI_LIST_ITEM_H (60)
+#define UI_WIFI_LIST_ITEM_FONT (&lv_font_montserrat_26)
+#define UI_WIFI_KEYBOARD_H_PERCENT (30)
+#define UI_WIFI_ICON_LOCK_RIGHT_OFFSET (-10)
+#define UI_WIFI_ICON_SIGNAL_RIGHT_OFFSET (-50)
+#define UI_WIFI_ICON_CONNECT_RIGHT_OFFSET (-90)
 
 using namespace std;
 
-#define SCAN_LIST_SIZE      25
+#define SCAN_LIST_SIZE 25
 
 static const char TAG[] = "EUI_Setting";
 
@@ -80,11 +82,11 @@ static char st_wifi_password[64];
 static uint8_t base_mac_addr[6] = {0};
 static char mac_str[18] = {0};
 
-static lv_obj_t* panel_wifi_btn[SCAN_LIST_SIZE];
-static lv_obj_t* label_wifi_ssid[SCAN_LIST_SIZE];
-static lv_obj_t* img_img_wifi_lock[SCAN_LIST_SIZE];
-static lv_obj_t* wifi_image[SCAN_LIST_SIZE];
-static lv_obj_t* wifi_connect[SCAN_LIST_SIZE];
+static lv_obj_t *panel_wifi_btn[SCAN_LIST_SIZE];
+static lv_obj_t *label_wifi_ssid[SCAN_LIST_SIZE];
+static lv_obj_t *img_img_wifi_lock[SCAN_LIST_SIZE];
+static lv_obj_t *wifi_image[SCAN_LIST_SIZE];
+static lv_obj_t *wifi_connect[SCAN_LIST_SIZE];
 
 static int brightness;
 
@@ -96,7 +98,8 @@ LV_IMG_DECLARE(img_wifi_lock);
 LV_IMG_DECLARE(img_wifi_connect_success);
 LV_IMG_DECLARE(img_wifi_connect_fail);
 
-typedef enum {
+typedef enum
+{
     WIFI_EVENT_CONNECTED = BIT(0),
     WIFI_EVENT_INIT_DONE = BIT(1),
     WIFI_EVENT_UI_INIT_DONE = BIT(2),
@@ -110,12 +113,11 @@ extern lv_obj_t *ui_Sec;
 extern lv_obj_t *ui_Date;
 extern lv_obj_t *ui_Clock_Number;
 
-AppSettings::AppSettings():
-    ESP_Brookesia_PhoneApp("Settings", &img_app_setting, false),                  // auto_resize_visual_area
-    _is_ui_resumed(false),
-    _is_ui_del(true),
-    _screen_index(UI_MAIN_SETTING_INDEX),
-    _screen_list({nullptr})
+AppSettings::AppSettings() : ESP_Brookesia_PhoneApp("Settings", &img_app_setting, false), // auto_resize_visual_area
+                             _is_ui_resumed(false),
+                             _is_ui_del(true),
+                             _screen_index(UI_MAIN_SETTING_INDEX),
+                             _screen_list({nullptr})
 {
 }
 
@@ -136,7 +138,6 @@ bool AppSettings::run(void)
              base_mac_addr[0], base_mac_addr[1], base_mac_addr[2],
              base_mac_addr[3], base_mac_addr[4], base_mac_addr[5]);
 
-
     // Initialize custom UI
     extraUiInit();
 
@@ -152,16 +153,22 @@ bool AppSettings::back(void)
 {
     _is_ui_resumed = false;
 
-    if (_screen_index == UI_WIFI_CONNECT_INDEX) {
+    if (_screen_index == UI_WIFI_CONNECT_INDEX)
+    {
         lv_scr_load(ui_ScreenSettingWiFi);
-    } else if (_screen_index != UI_MAIN_SETTING_INDEX) {
+    }
+    else if (_screen_index != UI_MAIN_SETTING_INDEX)
+    {
         lv_scr_load(ui_ScreenSettingMain);
-    } else {
-        while(xEventGroupGetBits(s_wifi_event_group) & WIFI_EVENT_SCANING) {
+    }
+    else
+    {
+        while (xEventGroupGetBits(s_wifi_event_group) & WIFI_EVENT_SCANING)
+        {
             ESP_LOGI(TAG, "WiFi is scanning, please wait");
             vTaskDelay(pdMS_TO_TICKS(100));
             stopWifiScan();
-        } 
+        }
         notifyCoreClosed();
     }
 
@@ -170,21 +177,22 @@ bool AppSettings::back(void)
 
 bool AppSettings::close(void)
 {
-    while(xEventGroupGetBits(s_wifi_event_group) & WIFI_EVENT_SCANING) {
+    while (xEventGroupGetBits(s_wifi_event_group) & WIFI_EVENT_SCANING)
+    {
         ESP_LOGI(TAG, "WiFi is scanning, please wait");
         vTaskDelay(pdMS_TO_TICKS(100));
         stopWifiScan();
-    } 
-    
+    }
+
     _is_ui_del = true;
-    
+
     return true;
 }
 
 bool AppSettings::init(void)
 {
     ESP_Brookesia_Phone *phone = getPhone();
-    ESP_Brookesia_PhoneHome& home = phone->getHome();
+    ESP_Brookesia_PhoneHome &home = phone->getHome();
     status_bar = home.getStatusBar();
     backstage = home.getRecentsScreen();
 
@@ -196,6 +204,9 @@ bool AppSettings::init(void)
     // _nvs_param_map[NVS_KEY_DISPLAY_BRIGHTNESS] = bsp_display_brightness_get();
     _nvs_param_map[NVS_KEY_DISPLAY_BRIGHTNESS] = brightness;
     _nvs_param_map[NVS_KEY_DISPLAY_BRIGHTNESS] = max(min((int)_nvs_param_map[NVS_KEY_DISPLAY_BRIGHTNESS], SCREEN_BRIGHTNESS_MAX), SCREEN_BRIGHTNESS_MIN);
+    _nvs_param_map_string[NVS_KEY_WIFI_SSID] = "";
+    _nvs_param_map_string[NVS_KEY_WIFI_PWD] = "";
+
     // Load NVS parameters if exist
     loadNvsParam();
     // Update System parameters
@@ -254,18 +265,19 @@ void AppSettings::extraUiInit(void)
     lv_obj_set_style_pad_all(ui_PanelScreenSettingWiFiList, 0, 0);
     lv_obj_set_style_pad_top(ui_PanelScreenSettingWiFiList, UI_WIFI_LIST_UP_PAD, 0);
     lv_obj_set_style_pad_bottom(ui_PanelScreenSettingWiFiList, UI_WIFI_LIST_DOWN_PAD, 0);
-    for(int i = 0; i < SCAN_LIST_SIZE; i++) {
+    for (int i = 0; i < SCAN_LIST_SIZE; i++)
+    {
         panel_wifi_btn[i] = lv_obj_create(ui_PanelScreenSettingWiFiList);
         lv_obj_set_size(panel_wifi_btn[i], lv_pct(100), UI_WIFI_LIST_ITEM_H);
         lv_obj_set_style_radius(panel_wifi_btn[i], 0, 0);
         lv_obj_set_style_border_width(panel_wifi_btn[i], 0, 0);
         lv_obj_set_style_text_font(panel_wifi_btn[i], UI_WIFI_LIST_ITEM_FONT, 0);
         lv_obj_add_flag(panel_wifi_btn[i], LV_OBJ_FLAG_CLICKABLE);
-        lv_obj_clear_flag( panel_wifi_btn[i], LV_OBJ_FLAG_SCROLLABLE );
-        lv_obj_set_style_bg_color(panel_wifi_btn[i], lv_color_hex(0xCBCBCB), LV_PART_MAIN | LV_STATE_PRESSED );
-        lv_obj_set_style_bg_opa(panel_wifi_btn[i], 255, LV_PART_MAIN| LV_STATE_DEFAULT);
-        lv_obj_set_style_border_color(panel_wifi_btn[i], lv_color_hex(0xFFFFFF), LV_PART_MAIN | LV_STATE_DEFAULT );
-        lv_obj_set_style_border_opa(panel_wifi_btn[i], 255, LV_PART_MAIN| LV_STATE_DEFAULT);
+        lv_obj_clear_flag(panel_wifi_btn[i], LV_OBJ_FLAG_SCROLLABLE);
+        lv_obj_set_style_bg_color(panel_wifi_btn[i], lv_color_hex(0xCBCBCB), LV_PART_MAIN | LV_STATE_PRESSED);
+        lv_obj_set_style_bg_opa(panel_wifi_btn[i], 255, LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_style_border_color(panel_wifi_btn[i], lv_color_hex(0xFFFFFF), LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_style_border_opa(panel_wifi_btn[i], 255, LV_PART_MAIN | LV_STATE_DEFAULT);
 
         label_wifi_ssid[i] = lv_label_create(panel_wifi_btn[i]);
         lv_obj_set_align(label_wifi_ssid[i], LV_ALIGN_LEFT_MID);
@@ -282,8 +294,9 @@ void AppSettings::extraUiInit(void)
         lv_obj_align(wifi_connect[i], LV_ALIGN_RIGHT_MID, UI_WIFI_ICON_CONNECT_RIGHT_OFFSET, 0);
         lv_obj_add_flag(wifi_connect[i], LV_OBJ_FLAG_HIDDEN);
 
-        lv_obj_add_event_cb(panel_wifi_btn[i], onButtonWifiListClickedEventCallback, LV_EVENT_CLICKED, (void*)label_wifi_ssid[i]);
-        if(!(xEventGroupGetBits(s_wifi_event_group) & WIFI_EVENT_SCANING)) {
+        lv_obj_add_event_cb(panel_wifi_btn[i], onButtonWifiListClickedEventCallback, LV_EVENT_CLICKED, (void *)label_wifi_ssid[i]);
+        if (!(xEventGroupGetBits(s_wifi_event_group) & WIFI_EVENT_SCANING))
+        {
             lv_obj_add_flag(ui_PanelScreenSettingWiFiList, LV_OBJ_FLAG_HIDDEN);
             lv_obj_add_flag(ui_SpinnerScreenSettingWiFi, LV_OBJ_FLAG_HIDDEN);
         }
@@ -351,7 +364,7 @@ void AppSettings::extraUiInit(void)
     lv_label_set_text(ui_LabelPanelPanelScreenSettingAbout3, mac_str);
     lv_label_set_text(ui_LabelPanelPanelScreenSettingAbout5, "v0.2.0");
     lv_label_set_text(ui_LabelPanelPanelScreenSettingAbout2, "ESP32-P4-Function-EV-Board");
-    lv_obj_set_x( ui_LabelPanelPanelScreenSettingAbout2, 167 );
+    lv_obj_set_x(ui_LabelPanelPanelScreenSettingAbout2, 167);
 
     char char_ui_version[20];
     snprintf(char_ui_version, sizeof(char_ui_version), "v%d.%d.%d", ESP_BROOKESIA_CONF_VER_MAJOR, ESP_BROOKESIA_CONF_VER_MINOR, ESP_BROOKESIA_CONF_VER_PATCH);
@@ -360,7 +373,8 @@ void AppSettings::extraUiInit(void)
 
 void AppSettings::processWifiConnect(WifiConnectState_t state)
 {
-    switch (state) {
+    switch (state)
+    {
     case WIFI_CONNECT_HIDE:
         lv_obj_add_flag(_panel_wifi_connect, LV_OBJ_FLAG_HIDDEN);
         lv_obj_add_flag(_img_wifi_connect, LV_OBJ_FLAG_HIDDEN);
@@ -393,20 +407,24 @@ bool AppSettings::loadNvsParam(void)
     esp_err_t err = ESP_OK;
     nvs_handle_t nvs_handle;
     err = nvs_open(NVS_STORAGE_NAMESPACE, NVS_READWRITE, &nvs_handle);
-    if (err != ESP_OK) {
+    if (err != ESP_OK)
+    {
         ESP_LOGE(TAG, "Error (%s) opening NVS handle!", esp_err_to_name(err));
         return false;
     }
 
-    for (auto& key_value : _nvs_param_map) {
+    for (auto &key_value : _nvs_param_map)
+    {
         err = nvs_get_i32(nvs_handle, key_value.first.c_str(), &key_value.second);
-        switch (err) {
+        switch (err)
+        {
         case ESP_OK:
             ESP_LOGI(TAG, "Load %s: %d", key_value.first.c_str(), key_value.second);
             break;
         case ESP_ERR_NVS_NOT_FOUND:
             err = nvs_set_i32(nvs_handle, key_value.first.c_str(), key_value.second);
-            if (err != ESP_OK) {
+            if (err != ESP_OK)
+            {
                 ESP_LOGE(TAG, "Error (%s) setting %s", esp_err_to_name(err), key_value.first.c_str());
             }
             ESP_LOGW(TAG, "The value of %s is not initialized yet, set it to default value: %d", key_value.first.c_str(),
@@ -417,8 +435,35 @@ bool AppSettings::loadNvsParam(void)
         }
     }
 
+    for (auto &key_value : _nvs_param_map_string)
+    {
+        size_t required_size;
+        err = nvs_get_str(nvs_handle, key_value.first.c_str(), NULL, &required_size);
+        if (err == ESP_OK)
+        {
+            char *value = (char *)malloc(required_size);
+            err = nvs_get_str(nvs_handle, key_value.first.c_str(), value, &required_size);
+            if (err == ESP_OK)
+            {
+                key_value.second = std::string(value);
+                ESP_LOGI(TAG, "Load %s: %s", key_value.first.c_str(), key_value.second.c_str());
+            }
+            free(value);
+        }
+        else if (err == ESP_ERR_NVS_NOT_FOUND)
+        {
+            err = nvs_set_str(nvs_handle, key_value.first.c_str(), key_value.second.c_str());
+            if (err != ESP_OK)
+            {
+                ESP_LOGE(TAG, "Error (%s) setting %s", esp_err_to_name(err), key_value.first.c_str());
+            }
+            ESP_LOGW(TAG, "The value of %s is not initialized yet, set it to default value: %s", key_value.first.c_str(), key_value.second.c_str());
+        }
+    }
+
     err = nvs_commit(nvs_handle);
-    if (err != ESP_OK) {
+    if (err != ESP_OK)
+    {
         ESP_LOGE(TAG, "Error (%s) committing NVS changes", esp_err_to_name(err));
         return false;
     }
@@ -432,18 +477,49 @@ bool AppSettings::setNvsParam(std::string key, int value)
     esp_err_t err = ESP_OK;
     nvs_handle_t nvs_handle;
     err = nvs_open(NVS_STORAGE_NAMESPACE, NVS_READWRITE, &nvs_handle);
-    if (err != ESP_OK) {
+    if (err != ESP_OK)
+    {
         ESP_LOGE(TAG, "Error (%s) opening NVS handle!", esp_err_to_name(err));
         return false;
     }
 
     err = nvs_set_i32(nvs_handle, key.c_str(), value);
-    if (err != ESP_OK) {
+    if (err != ESP_OK)
+    {
         ESP_LOGE(TAG, "Error (%s) setting %s", esp_err_to_name(err), key.c_str());
     }
 
     err = nvs_commit(nvs_handle);
-    if (err != ESP_OK) {
+    if (err != ESP_OK)
+    {
+        ESP_LOGE(TAG, "Error (%s) committing NVS changes", esp_err_to_name(err));
+        return false;
+    }
+    nvs_close(nvs_handle);
+
+    return true;
+}
+
+bool AppSettings::setNvsParam(std::string key, std::string value)
+{
+    esp_err_t err = ESP_OK;
+    nvs_handle_t nvs_handle;
+    err = nvs_open(NVS_STORAGE_NAMESPACE, NVS_READWRITE, &nvs_handle);
+    if (err != ESP_OK)
+    {
+        ESP_LOGE(TAG, "Error (%s) opening NVS handle!", esp_err_to_name(err));
+        return false;
+    }
+
+    err = nvs_set_str(nvs_handle, key.c_str(), value.c_str());
+    if (err != ESP_OK)
+    {
+        ESP_LOGE(TAG, "Error (%s) setting %s", esp_err_to_name(err), key.c_str());
+    }
+
+    err = nvs_commit(nvs_handle);
+    if (err != ESP_OK)
+    {
         ESP_LOGE(TAG, "Error (%s) committing NVS changes", esp_err_to_name(err));
         return false;
     }
@@ -454,15 +530,21 @@ bool AppSettings::setNvsParam(std::string key, int value)
 
 void AppSettings::updateUiByNvsParam(void)
 {
-    if (_nvs_param_map[NVS_KEY_WIFI_ENABLE]) {
+    if (_nvs_param_map[NVS_KEY_WIFI_ENABLE])
+    {
         lv_obj_add_state(ui_SwitchPanelScreenSettingWiFiSwitch, LV_STATE_CHECKED);
-    } else {
+    }
+    else
+    {
         lv_obj_clear_state(ui_SwitchPanelScreenSettingWiFiSwitch, LV_STATE_CHECKED);
     }
 
-    if (_nvs_param_map[NVS_KEY_BLE_ENABLE]) {
+    if (_nvs_param_map[NVS_KEY_BLE_ENABLE])
+    {
         lv_obj_add_state(ui_SwitchPanelScreenSettingBLESwitch, LV_STATE_CHECKED);
-    } else {
+    }
+    else
+    {
         lv_obj_clear_state(ui_SwitchPanelScreenSettingBLESwitch, LV_STATE_CHECKED);
     }
 
@@ -476,7 +558,8 @@ esp_err_t AppSettings::initWifi()
     xEventGroupClearBits(s_wifi_event_group, WIFI_EVENT_CONNECTED);
     xEventGroupClearBits(s_wifi_event_group, WIFI_EVENT_INIT_DONE);
     xEventGroupClearBits(s_wifi_event_group, WIFI_EVENT_SCANING);
-    if(!(xEventGroupGetBits(s_wifi_event_group) & WIFI_EVENT_UI_INIT_DONE)) {
+    if (!(xEventGroupGetBits(s_wifi_event_group) & WIFI_EVENT_UI_INIT_DONE))
+    {
         xEventGroupClearBits(s_wifi_event_group, WIFI_EVENT_UI_INIT_DONE);
     }
 
@@ -495,7 +578,25 @@ esp_err_t AppSettings::initWifi()
                                                         &instance_any_id));
 
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
-    ESP_ERROR_CHECK(esp_wifi_start());
+
+    // Read saved SSID and password from NVS
+    std::string saved_ssid = _nvs_param_map_string[NVS_KEY_WIFI_SSID];
+    std::string saved_password = _nvs_param_map_string[NVS_KEY_WIFI_PWD];
+
+    if (!saved_ssid.empty() && !saved_password.empty())
+    {
+        wifi_config_t wifi_config = {0};
+        strlcpy((char *)wifi_config.sta.ssid, saved_ssid.c_str(), sizeof(wifi_config.sta.ssid));
+        strlcpy((char *)wifi_config.sta.password, saved_password.c_str(), sizeof(wifi_config.sta.password));
+        ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wifi_config));
+        ESP_LOGI(TAG, "Connecting to saved SSID: %s", wifi_config.sta.ssid);
+        ESP_ERROR_CHECK(esp_wifi_start());
+        ESP_ERROR_CHECK(esp_wifi_connect());
+    }
+    else
+    {
+        ESP_ERROR_CHECK(esp_wifi_start());
+    }
 
     return ESP_OK;
 }
@@ -535,32 +636,42 @@ void AppSettings::scanWifiAndUpdateUi(void)
 #endif
 
     bsp_display_lock(0);
-    if(xEventGroupGetBits(s_wifi_event_group) & WIFI_EVENT_SCANING) {
+    if (xEventGroupGetBits(s_wifi_event_group) & WIFI_EVENT_SCANING)
+    {
         deinitWifiListButton();
     }
     bsp_display_unlock();
 
-    for (int i = 0; (i < SCAN_LIST_SIZE) && (i < ap_count); i++) {
+    for (int i = 0; (i < SCAN_LIST_SIZE) && (i < ap_count); i++)
+    {
 #if ENABLE_DEBUG_LOG
         ESP_LOGI(TAG, "SSID \t\t%s", ap_info[i].ssid);
         ESP_LOGI(TAG, "RSSI \t\t%d", ap_info[i].rssi);
         ESP_LOGI(TAG, "Channel \t\t%d", ap_info[i].primary);
 #endif
 
-        if(ap_info[i].authmode != WIFI_AUTH_OPEN && ap_info[i].authmode != WIFI_AUTH_OWE) {
+        if (ap_info[i].authmode != WIFI_AUTH_OPEN && ap_info[i].authmode != WIFI_AUTH_OWE)
+        {
             psk_flag = true;
         }
 #if ENABLE_DEBUG_LOG
         ESP_LOGI(TAG, "psk_flag: %d", psk_flag);
 #endif
 
-        if(ap_info[i].rssi > -100 && ap_info[i].rssi <= -80) {
+        if (ap_info[i].rssi > -100 && ap_info[i].rssi <= -80)
+        {
             _wifi_signal_strength_level = WIFI_SIGNAL_STRENGTH_WEAK;
-        } else if(ap_info[i].rssi > -80 && ap_info[i].rssi <= -60) {
+        }
+        else if (ap_info[i].rssi > -80 && ap_info[i].rssi <= -60)
+        {
             _wifi_signal_strength_level = WIFI_SIGNAL_STRENGTH_MODERATE;
-        } else if(ap_info[i].rssi > -60) {
+        }
+        else if (ap_info[i].rssi > -60)
+        {
             _wifi_signal_strength_level = WIFI_SIGNAL_STRENGTH_GOOD;
-        } else {
+        }
+        else
+        {
             _wifi_signal_strength_level = WIFI_SIGNAL_STRENGTH_NONE;
         }
 #if ENABLE_DEBUG_LOG
@@ -568,42 +679,53 @@ void AppSettings::scanWifiAndUpdateUi(void)
 #endif
 
         bsp_display_lock(0);
-        if(xEventGroupGetBits(s_wifi_event_group) & WIFI_EVENT_SCANING) {
+        if (xEventGroupGetBits(s_wifi_event_group) & WIFI_EVENT_SCANING)
+        {
             initWifiListButton(label_wifi_ssid[i], img_img_wifi_lock[i], wifi_image[i], wifi_connect[i],
-                                ap_info[i].ssid, psk_flag, _wifi_signal_strength_level);     
+                               ap_info[i].ssid, psk_flag, _wifi_signal_strength_level);
         }
         bsp_display_unlock();
     }
 }
 
-void AppSettings::initWifiListButton(lv_obj_t* lv_label_ssid, lv_obj_t* lv_img_wifi_lock, lv_obj_t* lv_wifi_img,
-                                     lv_obj_t *lv_wifi_connect, uint8_t* ssid, bool psk, WifiSignalStrengthLevel_t signal_strength)
+void AppSettings::initWifiListButton(lv_obj_t *lv_label_ssid, lv_obj_t *lv_img_wifi_lock, lv_obj_t *lv_wifi_img,
+                                     lv_obj_t *lv_wifi_connect, uint8_t *ssid, bool psk, WifiSignalStrengthLevel_t signal_strength)
 {
-    lv_label_set_text_fmt(lv_label_ssid, "%s", (const char*)ssid);
+    lv_label_set_text_fmt(lv_label_ssid, "%s", (const char *)ssid);
 
-    if (strcmp((const char*)ssid, (const char*)st_wifi_ssid) == 0) {
+    if (strcmp((const char *)ssid, (const char *)st_wifi_ssid) == 0)
+    {
         lv_obj_clear_flag(lv_wifi_connect, LV_OBJ_FLAG_HIDDEN);
     }
 
-    if(psk) {
+    if (psk)
+    {
         lv_img_set_src(lv_img_wifi_lock, &img_wifi_lock);
         lv_obj_clear_flag(lv_img_wifi_lock, LV_OBJ_FLAG_HIDDEN);
     }
 
-    if (signal_strength == WIFI_SIGNAL_STRENGTH_GOOD) {
+    if (signal_strength == WIFI_SIGNAL_STRENGTH_GOOD)
+    {
         lv_img_set_src(lv_wifi_img, &img_wifisignal_good);
-    } else if (signal_strength == WIFI_SIGNAL_STRENGTH_MODERATE) {
+    }
+    else if (signal_strength == WIFI_SIGNAL_STRENGTH_MODERATE)
+    {
         lv_img_set_src(lv_wifi_img, &img_wifisignal_moderate);
-    } else if (signal_strength == WIFI_SIGNAL_STRENGTH_WEAK) {
+    }
+    else if (signal_strength == WIFI_SIGNAL_STRENGTH_WEAK)
+    {
         lv_img_set_src(lv_wifi_img, &img_wifisignal_wake);
-    } else {
+    }
+    else
+    {
         lv_img_set_src(lv_wifi_img, &img_wifisignal_absent);
     }
 }
 
 void AppSettings::deinitWifiListButton(void)
 {
-    for (int i = 0; i < SCAN_LIST_SIZE; i++) {
+    for (int i = 0; i < SCAN_LIST_SIZE; i++)
+    {
         lv_obj_add_flag(img_img_wifi_lock[i], LV_OBJ_FLAG_HIDDEN);
         lv_obj_add_flag(wifi_connect[i], LV_OBJ_FLAG_HIDDEN);
     }
@@ -621,12 +743,14 @@ void AppSettings::euiRefresTask(void *arg)
     uint16_t free_psram_size_kb = 0;
     uint16_t total_psram_size_kb = 0;
 
-    if (app == NULL) {
+    if (app == NULL)
+    {
         ESP_LOGE(TAG, "App instance is NULL");
         goto err;
     }
 
-    while (1) {
+    while (1)
+    {
         /* Update status bar */
         // time
         time(&now);
@@ -634,23 +758,54 @@ void AppSettings::euiRefresTask(void *arg)
         is_time_pm = (timeinfo.tm_hour >= 12);
 
         bsp_display_lock(0);
-        if(!app->status_bar->setClock(timeinfo.tm_hour, timeinfo.tm_min, is_time_pm)) {
+        if (!app->status_bar->setClock(timeinfo.tm_hour, timeinfo.tm_min, is_time_pm))
+        {
             ESP_LOGE(TAG, "Set clock failed");
         }
         bsp_display_unlock();
 
         // Update WiFi icon state
-        if((xEventGroupGetBits(s_wifi_event_group) & WIFI_EVENT_CONNECTED)) {
+        if ((xEventGroupGetBits(s_wifi_event_group) & WIFI_EVENT_CONNECTED))
+        {
             app_sntp_init();
 
             bsp_display_lock(0);
-            if(app->_wifi_signal_strength_level == WIFI_SIGNAL_STRENGTH_NONE) {
+
+            wifi_ap_record_t info;
+            esp_wifi_sta_get_ap_info(&info);
+            if (info.rssi > -100 && info.rssi <= -80)
+            {
+                app->_wifi_signal_strength_level = WIFI_SIGNAL_STRENGTH_WEAK;
+            }
+            else if (info.rssi > -80 && info.rssi <= -60)
+            {
+                app->_wifi_signal_strength_level = WIFI_SIGNAL_STRENGTH_MODERATE;
+            }
+            else if (info.rssi > -60)
+            {
+                app->_wifi_signal_strength_level = WIFI_SIGNAL_STRENGTH_GOOD;
+            }
+            else
+            {
+                app->_wifi_signal_strength_level = WIFI_SIGNAL_STRENGTH_NONE;
+            }
+
+            ESP_LOGV(TAG, "app->_wifi_signal_strength_level: %i", app->_wifi_signal_strength_level);
+
+            if (app->_wifi_signal_strength_level == WIFI_SIGNAL_STRENGTH_NONE)
+            {
                 app->status_bar->setWifiIconState(0);
-            } else if(app->_wifi_signal_strength_level == WIFI_SIGNAL_STRENGTH_WEAK) {
+            }
+            else if (app->_wifi_signal_strength_level == WIFI_SIGNAL_STRENGTH_WEAK)
+            {
                 app->status_bar->setWifiIconState(1);
-            } else if(app->_wifi_signal_strength_level == WIFI_SIGNAL_STRENGTH_MODERATE) {
+            }
+            else if (app->_wifi_signal_strength_level == WIFI_SIGNAL_STRENGTH_MODERATE)
+            {
                 app->status_bar->setWifiIconState(2);
-            } else if (app->_wifi_signal_strength_level == WIFI_SIGNAL_STRENGTH_GOOD) {
+            }
+            else if (app->_wifi_signal_strength_level == WIFI_SIGNAL_STRENGTH_GOOD)
+            {
                 app->status_bar->setWifiIconState(3);
             }
             bsp_display_unlock();
@@ -660,17 +815,19 @@ void AppSettings::euiRefresTask(void *arg)
         // app->updateGadgetTime(timeinfo);
 
         // Update memory in backstage
-        if(app->backstage->checkVisible()) {
+        if (app->backstage->checkVisible())
+        {
             free_sram_size_kb = heap_caps_get_free_size(MALLOC_CAP_INTERNAL) / 1024;
             total_sram_size_kb = heap_caps_get_total_size(MALLOC_CAP_INTERNAL) / 1024;
             free_psram_size_kb = heap_caps_get_free_size(MALLOC_CAP_SPIRAM) / 1024;
             total_psram_size_kb = heap_caps_get_total_size(MALLOC_CAP_SPIRAM) / 1024;
             ESP_LOGI(TAG, "Free sram size: %d KB, total sram size: %d KB, "
-                        "free psram size: %d KB, total psram size: %d KB",
-                        free_sram_size_kb, total_sram_size_kb, free_psram_size_kb, total_psram_size_kb);
+                          "free psram size: %d KB, total psram size: %d KB",
+                     free_sram_size_kb, total_sram_size_kb, free_psram_size_kb, total_psram_size_kb);
 
             bsp_display_lock(0);
-            if(!app->backstage->setMemoryLabel(free_sram_size_kb, total_sram_size_kb, free_psram_size_kb, total_psram_size_kb)) {
+            if (!app->backstage->setMemoryLabel(free_sram_size_kb, total_sram_size_kb, free_psram_size_kb, total_psram_size_kb))
+            {
                 ESP_LOGE(TAG, "Update memory usage failed");
             }
             bsp_display_unlock();
@@ -688,33 +845,41 @@ void AppSettings::wifiScanTask(void *arg)
     AppSettings *app = (AppSettings *)arg;
     esp_err_t ret = ESP_OK;
 
-    if (app == NULL) {
+    if (app == NULL)
+    {
         ESP_LOGE(TAG, "App instance is NULL");
         goto err;
     }
 
     ret = app->initWifi();
-    if (ret != ESP_OK) {
+    if (ret != ESP_OK)
+    {
         ESP_LOGE(TAG, "Init Wi-Fi failed");
         goto err;
     }
 
-    if (ret == ESP_OK) {
+    if (ret == ESP_OK)
+    {
         xEventGroupSetBits(s_wifi_event_group, WIFI_EVENT_INIT_DONE);
         ESP_LOGI(TAG, "wifi_init done");
-    } else {
+    }
+    else
+    {
         ESP_LOGE(TAG, "wifi_init failed");
     }
 
-    while (true) {
-        if((xEventGroupGetBits(s_wifi_event_group) & WIFI_EVENT_INIT_DONE) &&
-           (xEventGroupGetBits(s_wifi_event_group) & WIFI_EVENT_UI_INIT_DONE)){
+    while (true)
+    {
+        if ((xEventGroupGetBits(s_wifi_event_group) & WIFI_EVENT_INIT_DONE) &&
+            (xEventGroupGetBits(s_wifi_event_group) & WIFI_EVENT_UI_INIT_DONE))
+        {
             lv_obj_add_flag(ui_SwitchPanelScreenSettingWiFiSwitch, LV_OBJ_FLAG_CLICKABLE);
             xEventGroupClearBits(s_wifi_event_group, WIFI_EVENT_INIT_DONE);
             xEventGroupClearBits(s_wifi_event_group, WIFI_EVENT_UI_INIT_DONE);
         }
 
-        if(xEventGroupGetBits(s_wifi_event_group) & WIFI_EVENT_SCANING){
+        if (xEventGroupGetBits(s_wifi_event_group) & WIFI_EVENT_SCANING)
+        {
             app->scanWifiAndUpdateUi();
             vTaskDelay(pdMS_TO_TICKS(WIFI_SCAN_TASK_PERIOD_MS));
         }
@@ -729,7 +894,7 @@ err:
 void AppSettings::wifiConnectTask(void *arg)
 {
     AppSettings *app = (AppSettings *)arg;
-    wifi_config_t wifi_config = { 0 };
+    wifi_config_t wifi_config = {0};
 
     esp_wifi_disconnect();
     app->status_bar->setWifiIconState(0);
@@ -737,25 +902,30 @@ void AppSettings::wifiConnectTask(void *arg)
     memcpy(st_wifi_ssid, lv_label_get_text(ui_LabelScreenSettingVerificationSSID), sizeof(wifi_config.sta.ssid));
     memcpy(st_wifi_password, lv_textarea_get_text(ui_TextAreaScreenSettingVerificationPassword), sizeof(wifi_config.sta.ssid));
 
+    app->setNvsParam(NVS_KEY_WIFI_SSID, st_wifi_ssid);
+    app->setNvsParam(NVS_KEY_WIFI_PWD, st_wifi_password);
+
     memcpy(wifi_config.sta.ssid, st_wifi_ssid, sizeof(wifi_config.sta.ssid));
     memcpy(wifi_config.sta.password, st_wifi_password, sizeof(wifi_config.sta.password));
 
     ESP_ERROR_CHECK(esp_wifi_start());
-    ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wifi_config) );
+    ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wifi_config));
 
     ESP_LOGI(TAG, "SSID:%s, password:%s.", wifi_config.sta.ssid, wifi_config.sta.password);
     esp_wifi_connect();
 
     EventBits_t bits = xEventGroupWaitBits(s_wifi_event_group,
-            WIFI_EVENT_CONNECTED,
-            pdFALSE,
-            pdFALSE,
-            pdMS_TO_TICKS(WIFI_CONNECT_RET_WAIT_TIME_MS));
+                                           WIFI_EVENT_CONNECTED,
+                                           pdFALSE,
+                                           pdFALSE,
+                                           pdMS_TO_TICKS(WIFI_CONNECT_RET_WAIT_TIME_MS));
 
-    if (bits & WIFI_EVENT_CONNECTED) {
+    if (bits & WIFI_EVENT_CONNECTED)
+    {
         ESP_LOGI(TAG, "Connected successfully");
 
-        if (!app->_is_ui_del) {
+        if (!app->_is_ui_del)
+        {
             bsp_display_lock(0);
             app->processWifiConnect(WIFI_CONNECT_SUCCESS);
             bsp_display_unlock();
@@ -763,7 +933,8 @@ void AppSettings::wifiConnectTask(void *arg)
 
         vTaskDelay(pdMS_TO_TICKS(WIFI_CONNECT_UI_WAIT_TIME_MS));
 
-        if (!app->_is_ui_del) {
+        if (!app->_is_ui_del)
+        {
             bsp_display_lock(0);
             app->processWifiConnect(WIFI_CONNECT_HIDE);
             // lv_obj_clear_flag(ui_KeyboardScreenSettingVerification, LV_OBJ_FLAG_HIDDEN);
@@ -773,10 +944,13 @@ void AppSettings::wifiConnectTask(void *arg)
         }
 
         // app->updateGadgetTime(timeinfo);
-    } else {
+    }
+    else
+    {
         ESP_LOGI(TAG, "Connect failed");
 
-        if (!app->_is_ui_del) {
+        if (!app->_is_ui_del)
+        {
             bsp_display_lock(0);
             app->processWifiConnect(WIFI_CONNECT_FAIL);
             bsp_display_unlock();
@@ -784,7 +958,8 @@ void AppSettings::wifiConnectTask(void *arg)
 
         vTaskDelay(pdMS_TO_TICKS(WIFI_CONNECT_UI_WAIT_TIME_MS));
 
-        if (!app->_is_ui_del) {
+        if (!app->_is_ui_del)
+        {
             bsp_display_lock(0);
             app->processWifiConnect(WIFI_CONNECT_HIDE);
             // lv_obj_clear_flag(ui_KeyboardScreenSettingVerification, LV_OBJ_FLAG_HIDDEN);
@@ -802,23 +977,30 @@ void AppSettings::wifiConnectTask(void *arg)
     vTaskDelete(NULL);
 }
 
-void AppSettings::wifiEventHandler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data)
+void AppSettings::wifiEventHandler(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data)
 {
     AppSettings *app = (AppSettings *)arg;
 
-    if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_CONNECTED) {
+    if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_CONNECTED)
+    {
         xEventGroupSetBits(s_wifi_event_group, WIFI_EVENT_CONNECTED);
         ESP_LOGI(TAG, "connected to ap SSID:%s, password:%s.", st_wifi_ssid, st_wifi_password);
-    } else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED) {
+    }
+    else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED)
+    {
         xEventGroupClearBits(s_wifi_event_group, WIFI_EVENT_CONNECTED);
         ESP_LOGI(TAG, "disconnected from ap SSID:%s, password:%s.", st_wifi_ssid, st_wifi_password);
         memset(st_wifi_ssid, 0, sizeof(st_wifi_ssid));
 
         // app->back();
-    } else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_SCAN_DONE) {
-        if(lv_obj_has_flag(ui_PanelScreenSettingWiFiList, LV_OBJ_FLAG_HIDDEN) &&
-           xEventGroupGetBits(s_wifi_event_group) & WIFI_EVENT_SCANING) {
-            if (!app->_is_ui_del) {
+    }
+    else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_SCAN_DONE)
+    {
+        if (lv_obj_has_flag(ui_PanelScreenSettingWiFiList, LV_OBJ_FLAG_HIDDEN) &&
+            xEventGroupGetBits(s_wifi_event_group) & WIFI_EVENT_SCANING)
+        {
+            if (!app->_is_ui_del)
+            {
                 bsp_display_lock(0);
                 lv_obj_clear_flag(ui_PanelScreenSettingWiFiList, LV_OBJ_FLAG_HIDDEN);
                 lv_obj_add_flag(ui_SpinnerScreenSettingWiFi, LV_OBJ_FLAG_HIDDEN);
@@ -839,7 +1021,8 @@ void AppSettings::onKeyboardScreenSettingVerificationClickedEventCallback(lv_eve
 
     lv_keyboard_set_textarea(target, ui_TextAreaScreenSettingVerificationPassword);
 
-    if(lv_keyboard_get_selected_btn(target) == 39) {
+    if (lv_keyboard_get_selected_btn(target) == 39)
+    {
         app->processWifiConnect(WIFI_CONNECT_RUNNING);
         // lv_obj_add_flag(ui_KeyboardScreenSettingVerification, LV_OBJ_FLAG_HIDDEN);
 
@@ -853,25 +1036,29 @@ end:
     return;
 }
 
-void AppSettings::onScreenLoadEventCallback( lv_event_t * e)
+void AppSettings::onScreenLoadEventCallback(lv_event_t *e)
 {
     AppSettings *app = (AppSettings *)lv_event_get_user_data(e);
     SettingScreenIndex_t last_scr_index = app->_screen_index;
 
     ESP_BROOKESIA_CHECK_NULL_GOTO(app, end, "Invalid app pointer");
 
-    for (int i = 0; i < UI_MAX_INDEX; i++) {
-        if (app->_screen_list[i] == lv_event_get_target(e)) {
+    for (int i = 0; i < UI_MAX_INDEX; i++)
+    {
+        if (app->_screen_list[i] == lv_event_get_target(e))
+        {
             app->_screen_index = (SettingScreenIndex_t)i;
             break;
         }
     }
 
-    if (last_scr_index == UI_WIFI_SCAN_INDEX) {
+    if (last_scr_index == UI_WIFI_SCAN_INDEX)
+    {
         app->stopWifiScan();
     }
 
-    if ((app->_screen_index == UI_WIFI_SCAN_INDEX) && (app->_nvs_param_map[NVS_KEY_WIFI_ENABLE] == true)) {
+    if ((app->_screen_index == UI_WIFI_SCAN_INDEX) && (app->_nvs_param_map[NVS_KEY_WIFI_ENABLE] == true))
+    {
         app->startWifiScan();
     }
 
@@ -879,24 +1066,31 @@ end:
     return;
 }
 
-void AppSettings::onSwitchPanelScreenSettingWiFiSwitchValueChangeEventCallback( lv_event_t * e) {
+void AppSettings::onSwitchPanelScreenSettingWiFiSwitchValueChangeEventCallback(lv_event_t *e)
+{
     lv_state_t state = lv_obj_get_state(ui_SwitchPanelScreenSettingWiFiSwitch);
 
     AppSettings *app = (AppSettings *)lv_event_get_user_data(e);
     ESP_BROOKESIA_CHECK_NULL_GOTO(app, end, "Invalid app pointer");
 
-    if (state & LV_STATE_CHECKED) {
+    if (state & LV_STATE_CHECKED)
+    {
         app->_nvs_param_map[NVS_KEY_WIFI_ENABLE] = true;
         app->setNvsParam(NVS_KEY_WIFI_ENABLE, 1);
-        if (app->_screen_index == UI_WIFI_SCAN_INDEX) {
+        if (app->_screen_index == UI_WIFI_SCAN_INDEX)
+        {
             app->startWifiScan();
         }
-    } else {
+    }
+    else
+    {
         app->_nvs_param_map[NVS_KEY_WIFI_ENABLE] = false;
         app->setNvsParam(NVS_KEY_WIFI_ENABLE, 0);
-        if (app->_screen_index == UI_WIFI_SCAN_INDEX) {
+        if (app->_screen_index == UI_WIFI_SCAN_INDEX)
+        {
             app->stopWifiScan();
-            if (xEventGroupGetBits(s_wifi_event_group) & WIFI_EVENT_CONNECTED) {
+            if (xEventGroupGetBits(s_wifi_event_group) & WIFI_EVENT_CONNECTED)
+            {
                 ESP_ERROR_CHECK(esp_wifi_disconnect());
                 app->status_bar->setWifiIconState(0);
             }
@@ -907,9 +1101,9 @@ end:
     return;
 }
 
-void AppSettings::onButtonWifiListClickedEventCallback(lv_event_t * e)
+void AppSettings::onButtonWifiListClickedEventCallback(lv_event_t *e)
 {
-    lv_obj_t *label_wifi_ssid = (lv_obj_t*)lv_event_get_user_data(e);
+    lv_obj_t *label_wifi_ssid = (lv_obj_t *)lv_event_get_user_data(e);
     lv_obj_t *btn = lv_event_get_target(e);
     lv_area_t btn_click_area;
     lv_point_t point;
@@ -917,7 +1111,8 @@ void AppSettings::onButtonWifiListClickedEventCallback(lv_event_t * e)
     lv_obj_get_click_area(btn, &btn_click_area);
     lv_indev_get_point(lv_indev_get_act(), &point);
     if ((point.x < btn_click_area.x1) || (point.x > btn_click_area.x2) ||
-        (point.y < btn_click_area.y1) || (point.y > btn_click_area.y2)) {
+        (point.y < btn_click_area.y1) || (point.y > btn_click_area.y2))
+    {
         return;
     }
 
@@ -929,16 +1124,20 @@ void AppSettings::onButtonWifiListClickedEventCallback(lv_event_t * e)
     esp_wifi_scan_stop();
 }
 
-void AppSettings::onSwitchPanelScreenSettingBLESwitchValueChangeEventCallback( lv_event_t * e) {
+void AppSettings::onSwitchPanelScreenSettingBLESwitchValueChangeEventCallback(lv_event_t *e)
+{
     lv_state_t state = lv_obj_get_state(ui_SwitchPanelScreenSettingBLESwitch);
 
     AppSettings *app = (AppSettings *)lv_event_get_user_data(e);
     ESP_BROOKESIA_CHECK_NULL_GOTO(app, end, "Invalid app pointer");
 
-    if (state & LV_STATE_CHECKED) {
+    if (state & LV_STATE_CHECKED)
+    {
         app->_nvs_param_map[NVS_KEY_WIFI_ENABLE] = true;
         app->setNvsParam(NVS_KEY_BLE_ENABLE, 1);
-    } else {
+    }
+    else
+    {
         app->_nvs_param_map[NVS_KEY_WIFI_ENABLE] = false;
         app->setNvsParam(NVS_KEY_BLE_ENABLE, 0);
     }
@@ -947,14 +1146,17 @@ end:
     return;
 }
 
-void AppSettings::onSliderPanelVolumeSwitchValueChangeEventCallback( lv_event_t * e) {
+void AppSettings::onSliderPanelVolumeSwitchValueChangeEventCallback(lv_event_t *e)
+{
     int volume = lv_slider_get_value(ui_SliderPanelScreenSettingVolumeSwitch);
 
     AppSettings *app = (AppSettings *)lv_event_get_user_data(e);
     ESP_BROOKESIA_CHECK_NULL_GOTO(app, end, "Invalid app pointer");
 
-    if (volume != app->_nvs_param_map[NVS_KEY_AUDIO_VOLUME]) {
-        if ((bsp_extra_codec_volume_set(volume, NULL) != ESP_OK) && (bsp_extra_codec_volume_get() != volume)) {
+    if (volume != app->_nvs_param_map[NVS_KEY_AUDIO_VOLUME])
+    {
+        if ((bsp_extra_codec_volume_set(volume, NULL) != ESP_OK) && (bsp_extra_codec_volume_get() != volume))
+        {
             ESP_LOGE(TAG, "Set volume failed");
             lv_slider_set_value(ui_SliderPanelScreenSettingVolumeSwitch, app->_nvs_param_map[NVS_KEY_AUDIO_VOLUME], LV_ANIM_OFF);
             return;
@@ -967,15 +1169,18 @@ end:
     return;
 }
 
-void AppSettings::onSliderPanelLightSwitchValueChangeEventCallback( lv_event_t * e) {
+void AppSettings::onSliderPanelLightSwitchValueChangeEventCallback(lv_event_t *e)
+{
     brightness = lv_slider_get_value(ui_SliderPanelScreenSettingLightSwitch1);
 
     AppSettings *app = (AppSettings *)lv_event_get_user_data(e);
     ESP_BROOKESIA_CHECK_NULL_GOTO(app, end, "Invalid app pointer");
 
-    if (brightness != app->_nvs_param_map[NVS_KEY_DISPLAY_BRIGHTNESS]) {
+    if (brightness != app->_nvs_param_map[NVS_KEY_DISPLAY_BRIGHTNESS])
+    {
         // if ((bsp_display_brightness_set(brightness) != ESP_OK) && (bsp_display_brightness_get() != brightness)) {
-        if (bsp_display_brightness_set(brightness) != ESP_OK) {
+        if (bsp_display_brightness_set(brightness) != ESP_OK)
+        {
             ESP_LOGE(TAG, "Set brightness failed");
             lv_slider_set_value(ui_SliderPanelScreenSettingLightSwitch1, app->_nvs_param_map[NVS_KEY_DISPLAY_BRIGHTNESS], LV_ANIM_OFF);
             return;

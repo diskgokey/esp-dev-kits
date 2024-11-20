@@ -82,9 +82,14 @@ extern "C" void app_main(void)
     assert(game_2048 != nullptr && "Failed to create game_2048");
     assert((phone->installApp(game_2048) >= 0) && "Failed to begin game_2048");
 
-    Camera *camera = new Camera(1280, 720);
-    assert(camera != nullptr && "Failed to create camera");
-    assert((phone->installApp(camera) >= 0) && "Failed to begin camera");
+    // Install ClockApp
+    ClockApp *clock_app = new ClockApp();
+    assert(clock_app != nullptr && "Failed to create ClockApp");
+    assert((phone->installApp(clock_app) >= 0) && "Failed to install ClockApp");
+
+    //Camera *camera = new Camera(1280, 720);
+    //assert(camera != nullptr && "Failed to create camera");
+    //assert((phone->installApp(camera) >= 0) && "Failed to begin camera");
 
 #if CONFIG_EXAMPLE_ENABLE_SD_CARD
     ESP_LOGW(TAG, "Using Video Player example requires inserting the SD card in advance and saving an MJPEG format video on the SD card");

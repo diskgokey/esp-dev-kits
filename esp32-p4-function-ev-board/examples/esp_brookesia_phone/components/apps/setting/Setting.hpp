@@ -62,6 +62,7 @@ private:
     // NVS Parameters
     bool loadNvsParam(void);
     bool setNvsParam(std::string key, int value);
+    bool setNvsParam(std::string key, std::string value);
     void updateUiByNvsParam(void);
     // WiFi
     esp_err_t initWifi(void);
@@ -103,6 +104,7 @@ private:
     lv_obj_t *_img_wifi_connect;
     std::array<lv_obj_t *, UI_MAX_INDEX> _screen_list;
     std::map<std::string, int32_t> _nvs_param_map;
+    std::map<std::string, std::string> _nvs_param_map_string;
     const ESP_Brookesia_StatusBar *status_bar; 
     const ESP_Brookesia_RecentsScreen *backstage;
 };

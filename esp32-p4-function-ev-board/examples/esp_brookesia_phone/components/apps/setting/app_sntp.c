@@ -16,7 +16,7 @@
 #include "esp_sleep.h"
 #include "esp_sntp.h"
 
-#define TIMEZONE        "CST-8"
+#define TIMEZONE        "CET-1CEST,M3.5.0,M10.5.0/3"
 #define SERVER_NAME_0   "ntp.aliyun.com"
 #define SERVER_NAME_1   "time.asia.apple.com"
 #define SERVER_NAME_2   "pool.ntp.org"
@@ -55,7 +55,7 @@ void app_sntp_init(void)
     localtime_r(&now, &timeinfo);
 
     // Set timezone to China Standard Time
-    setenv("TZ", "CST-8", 1);
+    setenv("TZ", TIMEZONE, 1);
     tzset();
     // Is time set? If not, tm_year will be (1970 - 1900).
     if (timeinfo.tm_year < (2016 - 1900)) {
@@ -88,7 +88,7 @@ void app_sntp_init(void)
     char strftime_buf[64];
     localtime_r(&now, &timeinfo);
     strftime(strftime_buf, sizeof(strftime_buf), "%c", &timeinfo);
-    ESP_LOGI(TAG, "The current date/time in Shanghai is: %s", strftime_buf);
+    ESP_LOGI(TAG, "The current date/time in Brussels is: %s", strftime_buf);
 
     if (sntp_get_sync_mode() == SNTP_SYNC_MODE_SMOOTH) {
         struct timeval outdelta;
